@@ -35,7 +35,7 @@
         status: res.status,
         error,
       });
-      return { error: 'invalid_json_response' };
+      return { error: 'invalid_json_response', status: res.status };
     });
     if (!res.ok) {
       const error = new Error(data.error || 'request_failed');

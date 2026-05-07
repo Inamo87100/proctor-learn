@@ -2,6 +2,8 @@
 
 namespace TLPC\Tutor;
 
+use Tutor\Models\QuizModel;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -110,9 +112,9 @@ final class AttemptService {
             ];
         }
 
-        if (class_exists(\Tutor\Models\QuizModel::class) && method_exists(\Tutor\Models\QuizModel::class, 'update_attempt_result')) {
+        if (class_exists(QuizModel::class) && method_exists(QuizModel::class, 'update_attempt_result')) {
             try {
-                \Tutor\Models\QuizModel::update_attempt_result((int) $attempt->attempt_id);
+                QuizModel::update_attempt_result((int) $attempt->attempt_id);
             } catch (\Throwable $throwable) {
                 do_action('tlpc_attempt_result_update_failed', (int) $attempt->attempt_id, $throwable, $attempt);
             }
