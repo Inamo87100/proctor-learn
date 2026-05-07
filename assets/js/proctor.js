@@ -2,6 +2,11 @@
   if (typeof window.TLPC === 'undefined') return;
 
   const cfg = window.TLPC;
+  const i18n = cfg.i18n || {};
+
+  function t(key, fallback) {
+    return typeof i18n[key] === 'string' && i18n[key] ? i18n[key] : fallback;
+  }
 
   function el(tag, attrs = {}, children = []) {
     const n = document.createElement(tag);
@@ -24,7 +29,20 @@
       body: JSON.stringify(body),
       credentials: 'same-origin',
     });
-    return await res.json();
+    const data = await res.json().catch((error) => {
+      console.error('TLPC invalid JSON response', {
+        path,
+        status: res.status,
+        error,
+      });
+      return { error: 'invalid_json_response', status: res.status };
+    });
+    if (!res.ok) {
+      const error = new Error(data.error || 'request_failed');
+      error.response = data;
+      throw error;
+    }
+    return data;
   }
 
   function showOverlay(title, message, actions = []) {
@@ -71,24 +89,29 @@
 
     return new Promise((resolve) => {
       const btn = el('button', { type: 'button' });
-      btn.textContent = 'Inizia (attiva fullscreen)';
+      btn.textContent = t('preflightStartButton', 'Inizia (attiva fullscreen)');
 
       btn.addEventListener('click', async () => {
         const ok = await requireFullscreen();
         if (!ok) {
-          showOverlay('Pre-flight non superato', 'Non riesco ad attivare la modalità fullscreen. Abilitala per continuare.');
+          showOverlay(
+            t('preflightFailedTitle', 'Pre-flight non superato'),
+            t('preflightFailedMessage', 'Non riesco ad attivare la modalità fullscreen. Abilitala per continuare.')
+          );
           return;
         }
 
-        await api('/preflight-pass', { course_id: cfg.courseId });
         cfg.preflightPassed = true;
         hideOverlay();
         resolve();
       });
 
       showOverlay(
-        'Controllo pre-esame',
-        '<p>Prima di iniziare il primo quiz di questo corso devi completare un controllo rapido.</p><ul><li>Fullscreen obbligatorio</li><li>Non cambiare tab durante il quiz</li></ul>',
+        t('preflightTitle', 'Controllo pre-esame'),
+        t(
+          'preflightMessage',
+          '<p>Prima di iniziare il primo quiz di questo corso devi completare un controllo rapido.</p><ul><li>Fullscreen obbligatorio</li><li>Non cambiare tab durante il quiz</li></ul>'
+        ),
         [btn]
       );
     });
@@ -97,32 +120,59 @@
   let switchCount = 0;
   let invalidated = false;
 
+  async function invalidateQuiz(reason) {
+    invalidated = true;
+
+    showOverlay(
+      t('invalidationTitle', 'Tentativo invalidato'),
+      t('invalidationSubmittingMessage', '<p>Hai cambiato scheda/finestra troppe volte. Sto consegnando il quiz con 0 risposte.</p>')
+    );
+
+    try {
+      await api('/force-submit', {
+        course_id: cfg.courseId,
+        quiz_id: cfg.quizId,
+        reason,
+      });
+
+      showOverlay(
+        t('invalidationTitle', 'Tentativo invalidato'),
+        t('invalidationSuccessMessage', '<p>Il quiz è stato invalidato e consegnato con 0 risposte.</p>')
+      );
+    } catch (error) {
+      showOverlay(
+        t('invalidationTitle', 'Tentativo invalidato'),
+        t('invalidationErrorMessage', '<p>Non sono riuscito a completare il force submit. Il quiz resta comunque bloccato e la pagina verrà ricaricata.</p>')
+      );
+    }
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 2500);
+  }
+
   async function report(event) {
     if (invalidated) return;
 
     switchCount += 1;
 
-    const data = await api('/event', {
-      course_id: cfg.courseId,
-      quiz_id: cfg.quizId,
-      event,
-      count: switchCount,
-    });
+    let data = {};
+    try {
+      data = await api('/event', {
+        course_id: cfg.courseId,
+        quiz_id: cfg.quizId,
+        event,
+        count: switchCount,
+      });
+    } catch (error) {
+      console.error('TLPC event reporting failed', error);
+      data = {};
+    }
 
     const max = typeof data.max === 'number' ? data.max : cfg.maxTabSwitches;
 
     if (data.invalidate || switchCount > max) {
-      invalidated = true;
-      showOverlay(
-        'Tentativo invalidato',
-        '<p>Hai cambiato scheda/finestra troppe volte. Il quiz verrà consegnato automaticamente con 0 risposte.</p>'
-      );
-
-      // TODO: qui potremo chiamare un endpoint "force-submit" quando implementato lato server.
-      // Per ora blocchiamo la UI.
-      setTimeout(() => {
-        window.location.reload();
-      }, 2500);
+      await invalidateQuiz(`tab_switch:${event}:${switchCount}`);
     }
   }
 

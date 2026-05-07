@@ -42,7 +42,7 @@ final class SettingsPage {
 
         add_settings_field('enabled_course_ids', __('Corsi con proctor attivo', 'tutorlms-proctor-custom'), [$this, 'field_enabled_courses'], 'tlpc-settings', 'tlpc_main');
         add_settings_field('max_tab_switches_default', __('Max tab switch (default)', 'tutorlms-proctor-custom'), [$this, 'field_max_tab_switches_default'], 'tlpc-settings', 'tlpc_main');
-        add_settings_field('preflight_required', __('Pre-flight richiesto (1 volta per corso)', 'tutorlms-proctor-custom'), [$this, 'field_preflight_required'], 'tlpc-settings', 'tlpc_main');
+        add_settings_field('preflight_required', __('Pre-flight richiesto (solo senza tentativi nel corso)', 'tutorlms-proctor-custom'), [$this, 'field_preflight_required'], 'tlpc-settings', 'tlpc_main');
 
         // (Optional) per-course override potrebbe diventare una tabella, per ora lasciamo base.
     }
@@ -128,7 +128,7 @@ final class SettingsPage {
             '<label><input type="checkbox" name="%s[preflight_required]" value="1" %s> %s</label>',
             esc_attr(self::OPTION_KEY),
             $checked,
-            esc_html__('Mostra pre-flight prima del primo quiz del corso (per utente).', 'tutorlms-proctor-custom')
+            esc_html__('Mostra il pre-flight solo se l’utente non ha ancora alcun tentativo quiz nel corso.', 'tutorlms-proctor-custom')
         );
     }
 

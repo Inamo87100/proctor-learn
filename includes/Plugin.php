@@ -23,6 +23,7 @@ final class Plugin {
         }
 
         // REST API
+        require_once TLPC_PLUGIN_DIR . 'includes/Tutor/AttemptService.php';
         require_once TLPC_PLUGIN_DIR . 'includes/Rest/Routes.php';
         (new Routes())->init();
 

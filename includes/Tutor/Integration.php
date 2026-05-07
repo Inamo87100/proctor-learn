@@ -3,17 +3,22 @@
 namespace TLPC\Tutor;
 
 use TLPC\Admin\SettingsPage;
+use Tutor\Models\CourseModel;
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
 final class Integration {
+    private AttemptService $attempt_service;
+
+    public function __construct() {
+        $this->attempt_service = new AttemptService();
+    }
+
     public function init(): void {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
 
-        // Hook placeholder: dipende dalla versione di TutorLMS.
-        // Qui non agganciamo ancora il submit server-side; lo faremo dopo aver verificato gli hook/azioni disponibili.
     }
 
     public function enqueue_assets(): void {
@@ -49,7 +54,7 @@ final class Integration {
 
         $user_id = get_current_user_id();
         $preflight_required = !empty($settings['preflight_required']);
-        $preflight_passed = $preflight_required ? (bool) get_user_meta($user_id, "tlpc_preflight_passed_{$course_id}", true) : true;
+        $preflight_passed = $preflight_required ? $this->attempt_service->user_has_course_attempt($user_id, $course_id) : true;
 
         wp_localize_script('tlpc-proctor', 'TLPC', [
             'restUrl' => esc_url_raw(rest_url('tlpc/v1')),
@@ -59,24 +64,43 @@ final class Integration {
             'preflightRequired' => $preflight_required,
             'preflightPassed' => $preflight_passed,
             'maxTabSwitches' => (int) ($settings['max_tab_switches_default'] ?? 1),
+            'i18n' => [
+                'preflightStartButton' => __('Inizia (attiva fullscreen)', 'tutorlms-proctor-custom'),
+                'preflightFailedTitle' => __('Pre-flight non superato', 'tutorlms-proctor-custom'),
+                'preflightFailedMessage' => __('Non riesco ad attivare la modalità fullscreen. Abilitala per continuare.', 'tutorlms-proctor-custom'),
+                'preflightTitle' => __('Controllo pre-esame', 'tutorlms-proctor-custom'),
+                'preflightMessage' => __('<p>Prima di iniziare il primo quiz di questo corso devi completare un controllo rapido.</p><ul><li>Fullscreen obbligatorio</li><li>Non cambiare tab durante il quiz</li></ul>', 'tutorlms-proctor-custom'),
+                'invalidationTitle' => __('Tentativo invalidato', 'tutorlms-proctor-custom'),
+                'invalidationSubmittingMessage' => __('<p>Hai cambiato scheda/finestra troppe volte. Sto consegnando il quiz con 0 risposte.</p>', 'tutorlms-proctor-custom'),
+                'invalidationSuccessMessage' => __('<p>Il quiz è stato invalidato e consegnato con 0 risposte.</p>', 'tutorlms-proctor-custom'),
+                'invalidationErrorMessage' => __('<p>Non sono riuscito a completare il force submit. Il quiz resta comunque bloccato e la pagina verrà ricaricata.</p>', 'tutorlms-proctor-custom'),
+            ],
         ]);
     }
 
     private function resolve_course_id_for_quiz(int $quiz_id): int {
-        // TutorLMS lega quiz->lesson/topic->course. Il modo esatto dipende da TutorLMS.
-        // Tentativi generici:
-        // 1) Se esiste una meta diretta 'tutor_course_id'
+        if (class_exists(CourseModel::class) && method_exists(CourseModel::class, 'get_course_by_quiz')) {
+            $course = CourseModel::get_course_by_quiz($quiz_id);
+            if (is_object($course) && !empty($course->ID)) {
+                return (int) $course->ID;
+            }
+        }
+
         $direct = (int) get_post_meta($quiz_id, 'tutor_course_id', true);
         if ($direct) {
             return $direct;
         }
 
-        // 2) Risali al parent e poi cerca un course id in meta.
-        $parent_id = (int) wp_get_post_parent_id($quiz_id);
-        if ($parent_id) {
-            $parent_course = (int) get_post_meta($parent_id, 'tutor_course_id', true);
+        $ancestors = get_post_ancestors($quiz_id);
+        foreach (array_filter(array_map('absint', $ancestors)) as $ancestor_id) {
+            $parent_course = (int) get_post_meta($ancestor_id, 'tutor_course_id', true);
             if ($parent_course) {
                 return $parent_course;
+            }
+
+            $ancestor = get_post($ancestor_id);
+            if ($ancestor && $ancestor->post_type === 'courses') {
+                return (int) $ancestor_id;
             }
         }
 

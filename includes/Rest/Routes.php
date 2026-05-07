@@ -3,6 +3,7 @@
 namespace TLPC\Rest;
 
 use TLPC\Admin\SettingsPage;
+use TLPC\Tutor\AttemptService;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -11,6 +12,12 @@ if (!defined('ABSPATH')) {
 }
 
 final class Routes {
+    private AttemptService $attempt_service;
+
+    public function __construct() {
+        $this->attempt_service = new AttemptService();
+    }
+
     public function init(): void {
         add_action('rest_api_init', [$this, 'register_routes']);
     }
@@ -27,6 +34,14 @@ final class Routes {
         register_rest_route('tlpc/v1', '/preflight-pass', [
             'methods' => 'POST',
             'callback' => [$this, 'handle_preflight_pass'],
+            'permission_callback' => function () {
+                return is_user_logged_in();
+            },
+        ]);
+
+        register_rest_route('tlpc/v1', '/force-submit', [
+            'methods' => 'POST',
+            'callback' => [$this, 'handle_force_submit'],
             'permission_callback' => function () {
                 return is_user_logged_in();
             },
@@ -63,9 +78,6 @@ final class Routes {
 
         $invalidate = ($count > $max);
 
-        // TODO: qui va chiamata l'integrazione TutorLMS per autosubmit con 0 risposte.
-        // Per ora ritorniamo al client che deve bloccare la UI e chiedere reload.
-
         return new WP_REST_Response([
             'ok' => true,
             'invalidate' => $invalidate,
@@ -73,16 +85,38 @@ final class Routes {
         ]);
     }
 
-    public function handle_preflight_pass(WP_REST_Request $request): WP_REST_Response {
+    public function handle_force_submit(WP_REST_Request $request): WP_REST_Response {
         $params = $request->get_json_params();
         $course_id = absint($params['course_id'] ?? 0);
-        if (!$course_id) {
-            return new WP_REST_Response(['ok' => false, 'error' => 'missing_course_id'], 400);
+        $quiz_id = absint($params['quiz_id'] ?? 0);
+        $reason = sanitize_text_field($params['reason'] ?? '');
+
+        if (!$course_id || !$quiz_id) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'missing_params'], 400);
         }
 
-        $user_id = get_current_user_id();
-        update_user_meta($user_id, "tlpc_preflight_passed_{$course_id}", time());
+        $settings = SettingsPage::get_settings();
+        $enabled_courses = $settings['enabled_course_ids'] ?? [];
+        if (!in_array($course_id, $enabled_courses, true)) {
+            return new WP_REST_Response(['ok' => true, 'ignored' => true]);
+        }
 
-        return new WP_REST_Response(['ok' => true]);
+        $result = $this->attempt_service->force_submit_quiz_with_zero_answers(get_current_user_id(), $quiz_id, $course_id, $reason);
+
+        $status = 200;
+        if (empty($result['ok'])) {
+            $status = match ($result['error'] ?? '') {
+                'missing_tables' => 503,
+                'missing_attempt' => 404,
+                'attempt_not_active' => 409,
+                default => 500,
+            };
+        }
+
+        return new WP_REST_Response($result, $status);
+    }
+
+    public function handle_preflight_pass(WP_REST_Request $request): WP_REST_Response {
+        return new WP_REST_Response(['ok' => true, 'deprecated' => true]);
     }
 }
