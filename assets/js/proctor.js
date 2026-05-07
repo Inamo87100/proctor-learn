@@ -24,7 +24,13 @@
       body: JSON.stringify(body),
       credentials: 'same-origin',
     });
-    return await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const error = new Error(data.error || 'request_failed');
+      error.response = data;
+      throw error;
+    }
+    return data;
   }
 
   function showOverlay(title, message, actions = []) {
@@ -80,7 +86,6 @@
           return;
         }
 
-        await api('/preflight-pass', { course_id: cfg.courseId });
         cfg.preflightPassed = true;
         hideOverlay();
         resolve();
@@ -97,32 +102,58 @@
   let switchCount = 0;
   let invalidated = false;
 
+  async function invalidateQuiz(reason) {
+    invalidated = true;
+
+    showOverlay(
+      'Tentativo invalidato',
+      '<p>Hai cambiato scheda/finestra troppe volte. Sto consegnando il quiz con 0 risposte.</p>'
+    );
+
+    try {
+      await api('/force-submit', {
+        course_id: cfg.courseId,
+        quiz_id: cfg.quizId,
+        reason,
+      });
+
+      showOverlay(
+        'Tentativo invalidato',
+        '<p>Il quiz è stato invalidato e consegnato con 0 risposte.</p>'
+      );
+    } catch (error) {
+      showOverlay(
+        'Tentativo invalidato',
+        '<p>Non sono riuscito a completare il force submit. Il quiz resta comunque bloccato e la pagina verrà ricaricata.</p>'
+      );
+    }
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 2500);
+  }
+
   async function report(event) {
     if (invalidated) return;
 
     switchCount += 1;
 
-    const data = await api('/event', {
-      course_id: cfg.courseId,
-      quiz_id: cfg.quizId,
-      event,
-      count: switchCount,
-    });
+    let data = {};
+    try {
+      data = await api('/event', {
+        course_id: cfg.courseId,
+        quiz_id: cfg.quizId,
+        event,
+        count: switchCount,
+      });
+    } catch (error) {
+      data = {};
+    }
 
     const max = typeof data.max === 'number' ? data.max : cfg.maxTabSwitches;
 
     if (data.invalidate || switchCount > max) {
-      invalidated = true;
-      showOverlay(
-        'Tentativo invalidato',
-        '<p>Hai cambiato scheda/finestra troppe volte. Il quiz verrà consegnato automaticamente con 0 risposte.</p>'
-      );
-
-      // TODO: qui potremo chiamare un endpoint "force-submit" quando implementato lato server.
-      // Per ora blocchiamo la UI.
-      setTimeout(() => {
-        window.location.reload();
-      }, 2500);
+      await invalidateQuiz(`tab_switch:${event}:${switchCount}`);
     }
   }
 
