@@ -2,7 +2,7 @@
 
 namespace TLPC\Rest;
 
-use TLPC\Admin\SettingsPage;
+use TLPC\Settings;
 use TLPC\Tutor\AttemptService;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -59,7 +59,11 @@ final class Routes {
             return new WP_REST_Response(['ok' => false, 'error' => 'missing_params'], 400);
         }
 
-        $settings = SettingsPage::get_settings();
+        if (!class_exists(Settings::class)) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'settings_unavailable'], 500);
+        }
+
+        $settings = Settings::get_settings();
         $enabled_courses = $settings['enabled_course_ids'] ?? [];
         if (!in_array($course_id, $enabled_courses, true)) {
             return new WP_REST_Response(['ok' => true, 'ignored' => true]);
@@ -95,7 +99,11 @@ final class Routes {
             return new WP_REST_Response(['ok' => false, 'error' => 'missing_params'], 400);
         }
 
-        $settings = SettingsPage::get_settings();
+        if (!class_exists(Settings::class)) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'settings_unavailable'], 500);
+        }
+
+        $settings = Settings::get_settings();
         $enabled_courses = $settings['enabled_course_ids'] ?? [];
         if (!in_array($course_id, $enabled_courses, true)) {
             return new WP_REST_Response(['ok' => true, 'ignored' => true]);
