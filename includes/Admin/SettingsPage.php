@@ -2,12 +2,15 @@
 
 namespace TLPC\Admin;
 
+use TLPC\Settings;
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
 final class SettingsPage {
-    public const OPTION_KEY = 'tlpc_settings';
+    /** @deprecated Use Settings::OPTION_KEY */
+    public const OPTION_KEY = Settings::OPTION_KEY;
 
     public function init(): void {
         add_action('admin_menu', [$this, 'add_menu']);
@@ -60,20 +63,9 @@ final class SettingsPage {
         return $out;
     }
 
+    /** @deprecated Use Settings::get_settings() */
     public static function get_settings(): array {
-        $defaults = [
-            'enabled_course_ids' => [],
-            'max_tab_switches_default' => 1,
-            'max_tab_switches_by_course' => [],
-            'preflight_required' => 1,
-        ];
-
-        $settings = get_option(self::OPTION_KEY, []);
-        if (!is_array($settings)) {
-            $settings = [];
-        }
-
-        return array_merge($defaults, $settings);
+        return Settings::get_settings();
     }
 
     public function field_enabled_courses(): void {

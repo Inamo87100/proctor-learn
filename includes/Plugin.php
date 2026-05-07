@@ -16,7 +16,10 @@ final class Plugin {
     }
 
     public function on_plugins_loaded(): void {
-        // Admin settings
+        // Settings (available on both admin and frontend)
+        require_once TLPC_PLUGIN_DIR . 'includes/Settings.php';
+
+        // Admin settings UI
         if (is_admin()) {
             require_once TLPC_PLUGIN_DIR . 'includes/Admin/SettingsPage.php';
             (new SettingsPage())->init();
