@@ -24,7 +24,7 @@
       body: JSON.stringify(body),
       credentials: 'same-origin',
     });
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json().catch(() => ({ error: 'invalid_json_response' }));
     if (!res.ok) {
       const error = new Error(data.error || 'request_failed');
       error.response = data;

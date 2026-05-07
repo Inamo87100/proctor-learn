@@ -80,7 +80,7 @@ final class Integration {
             return $direct;
         }
 
-        $ancestors = array_merge([(int) wp_get_post_parent_id($quiz_id)], get_post_ancestors($quiz_id));
+        $ancestors = get_post_ancestors($quiz_id);
         foreach (array_filter(array_map('absint', $ancestors)) as $ancestor_id) {
             $parent_course = (int) get_post_meta($ancestor_id, 'tutor_course_id', true);
             if ($parent_course) {

@@ -61,7 +61,7 @@ final class AttemptService {
 
         $reason = $reason ?: 'proctor_invalidation';
         $timestamp = $this->current_time_mysql();
-        $attempt_info = maybe_unserialize($attempt->attempt_info ?? []);
+        $attempt_info = maybe_unserialize($attempt->attempt_info ?? null);
         if (!is_array($attempt_info)) {
             $attempt_info = [];
         }
@@ -131,7 +131,7 @@ final class AttemptService {
         ];
     }
 
-    private function get_active_attempt(int $user_id, int $quiz_id, int $course_id = 0) {
+    private function get_active_attempt(int $user_id, int $quiz_id, int $course_id = 0): ?object {
         global $wpdb;
 
         $conditions = ['user_id = %d', 'quiz_id = %d'];

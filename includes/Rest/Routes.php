@@ -105,7 +105,11 @@ final class Routes {
 
         $status = 200;
         if (empty($result['ok'])) {
-            $status = in_array($result['error'] ?? '', ['missing_tables', 'missing_attempt', 'attempt_not_active'], true) ? 409 : 500;
+            $status = match ($result['error'] ?? '') {
+                'missing_attempt' => 404,
+                'attempt_not_active' => 409,
+                default => 500,
+            };
         }
 
         return new WP_REST_Response($result, $status);
