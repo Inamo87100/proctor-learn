@@ -10,6 +10,12 @@ if (!defined('ABSPATH')) {
 }
 
 final class Integration {
+    private AttemptService $attempt_service;
+
+    public function __construct() {
+        $this->attempt_service = new AttemptService();
+    }
+
     public function init(): void {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
 
@@ -48,8 +54,7 @@ final class Integration {
 
         $user_id = get_current_user_id();
         $preflight_required = !empty($settings['preflight_required']);
-        $attempt_service = new AttemptService();
-        $preflight_passed = $preflight_required ? $attempt_service->user_has_course_attempt($user_id, $course_id) : true;
+        $preflight_passed = $preflight_required ? $this->attempt_service->user_has_course_attempt($user_id, $course_id) : true;
 
         wp_localize_script('tlpc-proctor', 'TLPC', [
             'restUrl' => esc_url_raw(rest_url('tlpc/v1')),

@@ -105,7 +105,11 @@ final class AttemptService {
         }
 
         if (class_exists('\\Tutor\\Models\\QuizModel') && method_exists('\\Tutor\\Models\\QuizModel', 'update_attempt_result')) {
-            \Tutor\Models\QuizModel::update_attempt_result((int) $attempt->attempt_id);
+            try {
+                \Tutor\Models\QuizModel::update_attempt_result((int) $attempt->attempt_id);
+            } catch (\Throwable $throwable) {
+                do_action('tlpc_attempt_result_update_failed', (int) $attempt->attempt_id, $throwable, $attempt);
+            }
         }
 
         update_user_meta($user_id, 'tlpc_last_invalidated_attempt', [

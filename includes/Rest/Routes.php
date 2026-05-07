@@ -12,6 +12,12 @@ if (!defined('ABSPATH')) {
 }
 
 final class Routes {
+    private AttemptService $attempt_service;
+
+    public function __construct() {
+        $this->attempt_service = new AttemptService();
+    }
+
     public function init(): void {
         add_action('rest_api_init', [$this, 'register_routes']);
     }
@@ -95,8 +101,7 @@ final class Routes {
             return new WP_REST_Response(['ok' => true, 'ignored' => true]);
         }
 
-        $service = new AttemptService();
-        $result = $service->force_submit_quiz_with_zero_answers(get_current_user_id(), $quiz_id, $course_id, $reason);
+        $result = $this->attempt_service->force_submit_quiz_with_zero_answers(get_current_user_id(), $quiz_id, $course_id, $reason);
 
         $status = 200;
         if (empty($result['ok'])) {
