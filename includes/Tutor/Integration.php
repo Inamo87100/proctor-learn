@@ -2,7 +2,7 @@
 
 namespace TLPC\Tutor;
 
-use TLPC\Admin\SettingsPage;
+use TLPC\Settings;
 use Tutor\Models\CourseModel;
 
 if (!defined('ABSPATH')) {
@@ -26,6 +26,11 @@ final class Integration {
             return;
         }
 
+        // Fail closed if the Settings class is unavailable (should not happen in normal operation).
+        if (!class_exists(Settings::class)) {
+            return;
+        }
+
         // Carichiamo script solo su pagine che sembrano quiz TutorLMS.
         // In TutorLMS, i quiz sono un post type 'tutor_quiz' (come nel plugin di spunto).
         $post_id = get_queried_object_id();
@@ -43,7 +48,7 @@ final class Integration {
             return;
         }
 
-        $settings = SettingsPage::get_settings();
+        $settings = Settings::get_settings();
         $enabled_courses = $settings['enabled_course_ids'] ?? [];
         if (!in_array($course_id, $enabled_courses, true)) {
             return;
