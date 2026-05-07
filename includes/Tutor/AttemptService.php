@@ -61,14 +61,14 @@ final class AttemptService {
 
         $reason = $reason ?: 'proctor_invalidation';
         $timestamp = $this->current_time_mysql();
-        $attempt_info = maybe_unserialize($attempt->attempt_info ?? null);
-        if (false === $attempt_info && !empty($attempt->attempt_info)) {
-            $attempt_info = [
-                'tlpc_original_attempt_info' => $attempt->attempt_info,
-            ];
-        }
+        $raw_attempt_info = $attempt->attempt_info ?? null;
+        $attempt_info = maybe_unserialize($raw_attempt_info);
 
-        if (!is_array($attempt_info)) {
+        if (!is_array($attempt_info) && null !== $raw_attempt_info && '' !== $raw_attempt_info) {
+            $attempt_info = [
+                'tlpc_original_attempt_info' => $raw_attempt_info,
+            ];
+        } elseif (!is_array($attempt_info)) {
             $attempt_info = [];
         }
 
@@ -110,7 +110,7 @@ final class AttemptService {
             ];
         }
 
-        if (class_exists('\\Tutor\\Models\\QuizModel') && method_exists('\\Tutor\\Models\\QuizModel', 'update_attempt_result')) {
+        if (class_exists(\Tutor\Models\QuizModel::class) && method_exists(\Tutor\Models\QuizModel::class, 'update_attempt_result')) {
             try {
                 \Tutor\Models\QuizModel::update_attempt_result((int) $attempt->attempt_id);
             } catch (\Throwable $throwable) {

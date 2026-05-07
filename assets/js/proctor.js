@@ -30,7 +30,11 @@
       credentials: 'same-origin',
     });
     const data = await res.json().catch((error) => {
-      console.error('TLPC invalid JSON response', error);
+      console.error('TLPC invalid JSON response', {
+        path,
+        status: res.status,
+        error,
+      });
       return { error: 'invalid_json_response' };
     });
     if (!res.ok) {
@@ -161,6 +165,7 @@
         count: switchCount,
       });
     } catch (error) {
+      console.error('TLPC event reporting failed', error);
       data = {};
     }
 
