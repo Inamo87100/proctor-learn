@@ -1,0 +1,36 @@
+.tlpc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.tlpc-overlay.is-visible {
+  display: flex;
+}
+
+.tlpc-card {
+  width: 100%;
+  max-width: 680px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.tlpc-card h2 {
+  margin-top: 0;
+}
+
+.tlpc-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tlpc-actions button {
+  padding: 10px 14px;
+}
