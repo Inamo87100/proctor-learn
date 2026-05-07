@@ -59,11 +59,10 @@ final class Routes {
             return new WP_REST_Response(['ok' => false, 'error' => 'missing_params'], 400);
         }
 
-        if (!class_exists(Settings::class)) {
-            return new WP_REST_Response(['ok' => false, 'error' => 'settings_unavailable'], 500);
+        $settings = $this->read_settings();
+        if ($settings instanceof WP_REST_Response) {
+            return $settings;
         }
-
-        $settings = Settings::get_settings();
         $enabled_courses = $settings['enabled_course_ids'] ?? [];
         if (!in_array($course_id, $enabled_courses, true)) {
             return new WP_REST_Response(['ok' => true, 'ignored' => true]);
@@ -99,11 +98,10 @@ final class Routes {
             return new WP_REST_Response(['ok' => false, 'error' => 'missing_params'], 400);
         }
 
-        if (!class_exists(Settings::class)) {
-            return new WP_REST_Response(['ok' => false, 'error' => 'settings_unavailable'], 500);
+        $settings = $this->read_settings();
+        if ($settings instanceof WP_REST_Response) {
+            return $settings;
         }
-
-        $settings = Settings::get_settings();
         $enabled_courses = $settings['enabled_course_ids'] ?? [];
         if (!in_array($course_id, $enabled_courses, true)) {
             return new WP_REST_Response(['ok' => true, 'ignored' => true]);
@@ -126,5 +124,27 @@ final class Routes {
 
     public function handle_preflight_pass(WP_REST_Request $request): WP_REST_Response {
         return new WP_REST_Response(['ok' => true, 'deprecated' => true]);
+    }
+
+    /**
+     * Read plugin settings for REST handlers.
+     *
+     * @return array|WP_REST_Response Settings array on success, JSON error response on failure.
+     */
+    private function read_settings() {
+        try {
+            if (!class_exists(Settings::class)) {
+                throw new \RuntimeException('Settings class unavailable');
+            }
+            $settings = Settings::get_settings();
+        } catch (\Throwable $e) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'settings_unavailable'], 500);
+        }
+
+        if (!is_array($settings)) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'settings_unavailable'], 500);
+        }
+
+        return $settings;
     }
 }
