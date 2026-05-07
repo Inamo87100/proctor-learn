@@ -62,6 +62,12 @@ final class AttemptService {
         $reason = $reason ?: 'proctor_invalidation';
         $timestamp = $this->current_time_mysql();
         $attempt_info = maybe_unserialize($attempt->attempt_info ?? null);
+        if (false === $attempt_info && !empty($attempt->attempt_info)) {
+            $attempt_info = [
+                'tlpc_original_attempt_info' => $attempt->attempt_info,
+            ];
+        }
+
         if (!is_array($attempt_info)) {
             $attempt_info = [];
         }

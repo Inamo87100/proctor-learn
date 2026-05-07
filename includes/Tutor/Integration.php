@@ -64,6 +64,17 @@ final class Integration {
             'preflightRequired' => $preflight_required,
             'preflightPassed' => $preflight_passed,
             'maxTabSwitches' => (int) ($settings['max_tab_switches_default'] ?? 1),
+            'i18n' => [
+                'preflightStartButton' => __('Inizia (attiva fullscreen)', 'tutorlms-proctor-custom'),
+                'preflightFailedTitle' => __('Pre-flight non superato', 'tutorlms-proctor-custom'),
+                'preflightFailedMessage' => __('Non riesco ad attivare la modalità fullscreen. Abilitala per continuare.', 'tutorlms-proctor-custom'),
+                'preflightTitle' => __('Controllo pre-esame', 'tutorlms-proctor-custom'),
+                'preflightMessage' => __('<p>Prima di iniziare il primo quiz di questo corso devi completare un controllo rapido.</p><ul><li>Fullscreen obbligatorio</li><li>Non cambiare tab durante il quiz</li></ul>', 'tutorlms-proctor-custom'),
+                'invalidationTitle' => __('Tentativo invalidato', 'tutorlms-proctor-custom'),
+                'invalidationSubmittingMessage' => __('<p>Hai cambiato scheda/finestra troppe volte. Sto consegnando il quiz con 0 risposte.</p>', 'tutorlms-proctor-custom'),
+                'invalidationSuccessMessage' => __('<p>Il quiz è stato invalidato e consegnato con 0 risposte.</p>', 'tutorlms-proctor-custom'),
+                'invalidationErrorMessage' => __('<p>Non sono riuscito a completare il force submit. Il quiz resta comunque bloccato e la pagina verrà ricaricata.</p>', 'tutorlms-proctor-custom'),
+            ],
         ]);
     }
 

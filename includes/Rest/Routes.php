@@ -106,6 +106,7 @@ final class Routes {
         $status = 200;
         if (empty($result['ok'])) {
             $status = match ($result['error'] ?? '') {
+                'missing_tables' => 503,
                 'missing_attempt' => 404,
                 'attempt_not_active' => 409,
                 default => 500,
