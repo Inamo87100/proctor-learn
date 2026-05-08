@@ -121,13 +121,22 @@ final class Routes {
         if (!empty($result['ok'])) {
             $user_id = get_current_user_id();
             $user = get_userdata($user_id);
+            $first_name = '';
+            $last_name = '';
+            $email = '';
+
+            if ($user instanceof \WP_User) {
+                $first_name = (string) $user->first_name;
+                $last_name = (string) $user->last_name;
+                $email = (string) $user->user_email;
+            }
 
             (new Repository())->insert_violation([
                 'user_id' => $user_id,
                 'attempt_id' => (int) ($result['attempt_id'] ?? 0),
-                'first_name' => (string) ($user->first_name ?? get_user_meta($user_id, 'first_name', true)),
-                'last_name' => (string) ($user->last_name ?? get_user_meta($user_id, 'last_name', true)),
-                'email' => (string) ($user->user_email ?? ''),
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'email' => $email,
                 'quiz_id' => $quiz_id,
                 'course_id' => $course_id,
                 'quiz_title' => (string) get_the_title($quiz_id),

@@ -104,19 +104,18 @@ final class Repository {
             return [];
         }
 
-        $allowed_orderby = ['occurred_at'];
-        if (!in_array($orderby, $allowed_orderby, true)) {
-            $orderby = 'occurred_at';
-        }
-
-        $order = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
+        $allowed_orderby = [
+            'occurred_at' => 'occurred_at',
+        ];
+        $order_by_sql = $allowed_orderby[$orderby] ?? 'occurred_at';
+        $order_sql = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
         $per_page = max(1, $per_page);
         $offset = max(0, ($page_number - 1) * $per_page);
 
         $query = $wpdb->prepare(
             "SELECT id, user_id, attempt_id, first_name, last_name, email, quiz_id, course_id, quiz_title, reason, occurred_at
             FROM {$this->table_name()}
-            ORDER BY {$orderby} {$order}
+            ORDER BY {$order_by_sql} {$order_sql}
             LIMIT %d OFFSET %d",
             $per_page,
             $offset
