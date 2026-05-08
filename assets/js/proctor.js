@@ -140,10 +140,16 @@
         t('invalidationSuccessMessage', '<p>Il quiz è stato invalidato e consegnato con 0 risposte.</p>')
       );
     } catch (error) {
-      showOverlay(
-        t('invalidationTitle', 'Tentativo invalidato'),
-        t('invalidationErrorMessage', '<p>Non sono riuscito a completare il force submit. Il quiz resta comunque bloccato e la pagina verrà ricaricata.</p>')
-      );
+      const errorCode = error.response?.error;
+      if (errorCode === 'missing_attempt' || errorCode === 'attempt_not_active') {
+        // No active attempt to submit; treat as non-fatal and reload silently.
+        hideOverlay();
+      } else {
+        showOverlay(
+          t('invalidationTitle', 'Tentativo invalidato'),
+          t('invalidationErrorMessage', '<p>Non sono riuscito a completare il force submit. Il quiz resta comunque bloccato e la pagina verrà ricaricata.</p>')
+        );
+      }
     }
 
     setTimeout(() => {
@@ -184,10 +190,43 @@
     report('window_blur');
   }
 
+  async function checkAttemptStatus() {
+    try {
+      const data = await api('/attempt-status', {
+        course_id: cfg.courseId,
+        quiz_id: cfg.quizId,
+      });
+      return data.active === true;
+    } catch (e) {
+      console.error('TLPC attempt-status check failed', e);
+      return false;
+    }
+  }
+
+  async function waitForAttempt(maxTries = 15, intervalMs = 1000) {
+    for (let i = 0; i < maxTries; i++) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      const active = await checkAttemptStatus();
+      if (active) return true;
+    }
+    return false;
+  }
+
+  function attachListeners() {
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onBlur);
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
     await runPreflightIfNeeded();
 
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('blur', onBlur);
+    let active = await checkAttemptStatus();
+    if (!active) {
+      active = await waitForAttempt();
+    }
+
+    if (active) {
+      attachListeners();
+    }
   });
 })();

@@ -139,6 +139,22 @@ final class AttemptService {
         ];
     }
 
+    /**
+     * Return the current active (attempt_started) attempt row for a user+quiz, or null.
+     */
+    public function get_active_attempt_for_user(int $user_id, int $quiz_id, int $course_id = 0): ?object {
+        if (!$user_id || !$quiz_id) {
+            return null;
+        }
+
+        global $wpdb;
+        if (!$this->table_exists($wpdb->prefix . 'tutor_quiz_attempts')) {
+            return null;
+        }
+
+        return $this->get_active_attempt($user_id, $quiz_id, $course_id);
+    }
+
     private function get_active_attempt(int $user_id, int $quiz_id, int $course_id = 0): ?object {
         global $wpdb;
 

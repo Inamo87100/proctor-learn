@@ -46,6 +46,14 @@ final class Routes {
                 return is_user_logged_in();
             },
         ]);
+
+        register_rest_route('tlpc/v1', '/attempt-status', [
+            'methods' => 'POST',
+            'callback' => [$this, 'handle_attempt_status'],
+            'permission_callback' => function () {
+                return is_user_logged_in();
+            },
+        ]);
     }
 
     public function handle_event(WP_REST_Request $request): WP_REST_Response {
@@ -120,6 +128,29 @@ final class Routes {
         }
 
         return new WP_REST_Response($result, $status);
+    }
+
+    public function handle_attempt_status(WP_REST_Request $request): WP_REST_Response {
+        $params = $request->get_json_params();
+        $course_id = absint($params['course_id'] ?? 0);
+        $quiz_id = absint($params['quiz_id'] ?? 0);
+
+        if (!$course_id || !$quiz_id) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'missing_params'], 400);
+        }
+
+        $attempt = $this->attempt_service->get_active_attempt_for_user(get_current_user_id(), $quiz_id, $course_id);
+
+        if (!$attempt) {
+            return new WP_REST_Response(['ok' => true, 'active' => false]);
+        }
+
+        return new WP_REST_Response([
+            'ok' => true,
+            'active' => true,
+            'attempt_id' => (int) $attempt->attempt_id,
+            'attempt_status' => $attempt->attempt_status,
+        ]);
     }
 
     public function handle_preflight_pass(WP_REST_Request $request): WP_REST_Response {
