@@ -66,12 +66,12 @@ final class ViolationsListTable extends \WP_List_Table {
 
     public function get_columns(): array {
         return [
-            'name' => __('Name', 'tutorlms-proctor-custom'),
+            'name' => __('Nome', 'tutorlms-proctor-custom'),
             'email' => __('Email', 'tutorlms-proctor-custom'),
             'quiz' => __('Quiz', 'tutorlms-proctor-custom'),
-            'course' => __('Course', 'tutorlms-proctor-custom'),
-            'reason' => __('Reason', 'tutorlms-proctor-custom'),
-            'occurred_at' => __('Date/Time', 'tutorlms-proctor-custom'),
+            'course' => __('Corso', 'tutorlms-proctor-custom'),
+            'reason' => __('Motivo', 'tutorlms-proctor-custom'),
+            'occurred_at' => __('Data e ora', 'tutorlms-proctor-custom'),
         ];
     }
 
@@ -108,7 +108,7 @@ final class ViolationsListTable extends \WP_List_Table {
             case 'name':
                 $full_name = trim(($item['first_name'] ?? '') . ' ' . ($item['last_name'] ?? ''));
                 if ($full_name === '') {
-                    $full_name = sprintf(__('User #%d', 'tutorlms-proctor-custom'), (int) ($item['user_id'] ?? 0));
+                    $full_name = sprintf(__('Utente #%d', 'tutorlms-proctor-custom'), (int) ($item['user_id'] ?? 0));
                 }
                 return esc_html($full_name);
             case 'email':
@@ -123,7 +123,7 @@ final class ViolationsListTable extends \WP_List_Table {
             case 'course':
                 $course_id = (int) ($item['course_id'] ?? 0);
                 $course_title = $course_id > 0 ? (string) get_the_title($course_id) : '';
-                return esc_html(trim($course_title) !== '' ? sprintf('%s (#%d)', $course_title, $course_id) : sprintf('Course #%d', $course_id));
+                return esc_html(trim($course_title) !== '' ? sprintf('%s (#%d)', $course_title, $course_id) : sprintf('Corso #%d', $course_id));
             case 'reason':
                 return esc_html((string) ($item['reason'] ?? ''));
             case 'occurred_at':

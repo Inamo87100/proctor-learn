@@ -21,6 +21,10 @@ final class Plugin {
         require_once TLPC_PLUGIN_DIR . 'includes/Settings.php';
         require_once TLPC_PLUGIN_DIR . 'includes/Violations/Repository.php';
 
+        // Ensure violations table exists (idempotent; also covers installs that
+        // were already active when the violations feature was first deployed).
+        Violations\Repository::maybe_upgrade_schema();
+
         // Admin settings UI
         if (is_admin()) {
             $this->init_admin_settings_page();
