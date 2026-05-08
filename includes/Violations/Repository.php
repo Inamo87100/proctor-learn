@@ -94,43 +94,66 @@ final class Repository {
         return true;
     }
 
-    public function count_items(): int {
+    public function count_items(string $search_term = ''): int {
         global $wpdb;
 
-        if (!$this->table_exists($this->table_name())) {
+        $table_name = $this->get_safe_table_name();
+        if ($table_name === null) {
             return 0;
         }
 
-        return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name()}");
+        $search_term = trim($search_term);
+        if ($search_term === '') {
+            return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
+        }
+
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+        $query = $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table_name} WHERE (email LIKE %s OR first_name LIKE %s OR last_name LIKE %s)",
+            $like,
+            $like,
+            $like
+        );
+
+        return (int) $wpdb->get_var($query);
     }
 
-    public function get_items(int $per_page, int $page_number, string $date_order = 'DESC'): array {
+    public function get_items(int $per_page, int $page_number, string $date_order = 'DESC', string $search_term = ''): array {
         global $wpdb;
 
-        if (!$this->table_exists($this->table_name())) {
+        $table_name = $this->get_safe_table_name();
+        if ($table_name === null) {
             return [];
         }
 
         $order_sql = strtoupper($date_order) === 'ASC' ? 'ASC' : 'DESC';
         $per_page = max(1, $per_page);
         $offset = max(0, ($page_number - 1) * $per_page);
+        $search_term = trim($search_term);
+
+        $where_sql = '';
+        $query_args = [];
+
+        if ($search_term !== '') {
+            $like = '%' . $wpdb->esc_like($search_term) . '%';
+            $where_sql = ' WHERE (email LIKE %s OR first_name LIKE %s OR last_name LIKE %s)';
+            $query_args[] = $like;
+            $query_args[] = $like;
+            $query_args[] = $like;
+        }
 
         $query_template = "SELECT id, user_id, attempt_id, first_name, last_name, email, quiz_id, course_id, quiz_title, reason, occurred_at
-            FROM {$this->table_name()}
-            ORDER BY occurred_at DESC
+            FROM {$table_name}
+            {$where_sql}
+            ORDER BY occurred_at {$order_sql}
             LIMIT %d OFFSET %d";
 
-        if ($order_sql === 'ASC') {
-            $query_template = "SELECT id, user_id, attempt_id, first_name, last_name, email, quiz_id, course_id, quiz_title, reason, occurred_at
-            FROM {$this->table_name()}
-            ORDER BY occurred_at ASC
-            LIMIT %d OFFSET %d";
-        }
+        $query_args[] = $per_page;
+        $query_args[] = $offset;
 
         $query = $wpdb->prepare(
             $query_template,
-            $per_page,
-            $offset
+            ...$query_args
         );
 
         return (array) $wpdb->get_results($query, ARRAY_A);
@@ -142,5 +165,18 @@ final class Repository {
         $found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
 
         return $found === $table_name;
+    }
+
+    private function get_safe_table_name(): ?string {
+        $table_name = $this->table_name();
+        if (!preg_match('/^[A-Za-z0-9_]+$/', $table_name)) {
+            return null;
+        }
+
+        if (!$this->table_exists($table_name)) {
+            return null;
+        }
+
+        return $table_name;
     }
 }

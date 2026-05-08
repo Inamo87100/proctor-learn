@@ -46,6 +46,7 @@ final class ViolationsPage {
         echo '<h1>' . esc_html__('Infrazioni Proctor', 'tutorlms-proctor-custom') . '</h1>';
         echo '<form method="get">';
         echo '<input type="hidden" name="page" value="tlpc-violations" />';
+        $list_table->search_box(__('Cerca utente', 'tutorlms-proctor-custom'), 'tlpc-violations');
         $list_table->display();
         echo '</form>';
         echo '</div>';
@@ -71,6 +72,7 @@ final class ViolationsListTable extends \WP_List_Table {
             'quiz' => __('Quiz', 'tutorlms-proctor-custom'),
             'course' => __('Corso', 'tutorlms-proctor-custom'),
             'reason' => __('Motivo', 'tutorlms-proctor-custom'),
+            'details' => __('Dettagli', 'tutorlms-proctor-custom'),
             'occurred_at' => __('Data e ora', 'tutorlms-proctor-custom'),
         ];
     }
@@ -92,12 +94,15 @@ final class ViolationsListTable extends \WP_List_Table {
             $order = 'asc';
         }
 
-        $this->items = $this->repository->get_items($per_page, $current_page, $order);
+        $search_term = sanitize_text_field(wp_unslash((string) ($_GET['s'] ?? '')));
+
+        $this->items = $this->repository->get_items($per_page, $current_page, $order, $search_term);
+        $total_items = $this->repository->count_items($search_term);
 
         $this->set_pagination_args([
-            'total_items' => $this->repository->count_items(),
+            'total_items' => $total_items,
             'per_page' => $per_page,
-            'total_pages' => (int) ceil($this->repository->count_items() / $per_page),
+            'total_pages' => (int) ceil($total_items / $per_page),
         ]);
 
         $this->_column_headers = [$this->get_columns(), [], $this->get_sortable_columns()];
@@ -125,11 +130,35 @@ final class ViolationsListTable extends \WP_List_Table {
                 $course_title = $course_id > 0 ? (string) get_the_title($course_id) : '';
                 return esc_html(trim($course_title) !== '' ? sprintf('%s (#%d)', $course_title, $course_id) : sprintf('Corso #%d', $course_id));
             case 'reason':
+                return esc_html($this->human_reason_label((string) ($item['reason'] ?? '')));
+            case 'details':
                 return esc_html((string) ($item['reason'] ?? ''));
             case 'occurred_at':
                 return esc_html((string) ($item['occurred_at'] ?? ''));
             default:
                 return '';
         }
+    }
+
+    private function human_reason_label(string $reason): string {
+        $raw_reason = trim($reason);
+        if ($raw_reason === '') {
+            return '';
+        }
+
+        $segments = explode(':', strtolower($raw_reason));
+        $event_type = $segments[0] ?? '';
+        $is_tab_switch = in_array($event_type, ['tab_switch', 'window_blur', 'visibilitychange_hidden'], true);
+
+        if (!$is_tab_switch) {
+            return $raw_reason;
+        }
+
+        $last_segment = end($segments);
+        if ($last_segment !== false && ctype_digit($last_segment)) {
+            return sprintf(__('Cambio scheda (%d)', 'tutorlms-proctor-custom'), (int) $last_segment);
+        }
+
+        return __('Cambio scheda', 'tutorlms-proctor-custom');
     }
 }
