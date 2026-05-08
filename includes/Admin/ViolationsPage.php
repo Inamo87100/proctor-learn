@@ -84,9 +84,8 @@ final class ViolationsListTable extends \WP_List_Table {
     public function prepare_items(): void {
         $per_page = 20;
         $current_page = $this->get_pagenum();
-        $order_by = sanitize_key((string) ($_GET['orderby'] ?? 'occurred_at'));
         $order = 'desc';
-        if ($order_by === 'occurred_at' && strtolower((string) ($_GET['order'] ?? 'desc')) === 'asc') {
+        if (sanitize_key((string) ($_GET['orderby'] ?? 'occurred_at')) === 'occurred_at' && strtolower((string) ($_GET['order'] ?? 'desc')) === 'asc') {
             $order = 'asc';
         }
 
