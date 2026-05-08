@@ -97,8 +97,8 @@ final class Repository {
     public function count_items(string $search_term = ''): int {
         global $wpdb;
 
-        $table_name = $this->table_name();
-        if ($table_name !== $wpdb->prefix . 'tlpc_violations' || !$this->table_exists($table_name)) {
+        $table_name = $this->get_safe_table_name();
+        if ($table_name === null) {
             return 0;
         }
 
@@ -121,8 +121,8 @@ final class Repository {
     public function get_items(int $per_page, int $page_number, string $date_order = 'DESC', string $search_term = ''): array {
         global $wpdb;
 
-        $table_name = $this->table_name();
-        if ($table_name !== $wpdb->prefix . 'tlpc_violations' || !$this->table_exists($table_name)) {
+        $table_name = $this->get_safe_table_name();
+        if ($table_name === null) {
             return [];
         }
 
@@ -165,5 +165,18 @@ final class Repository {
         $found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
 
         return $found === $table_name;
+    }
+
+    private function get_safe_table_name(): ?string {
+        $table_name = $this->table_name();
+        if (!preg_match('/^[A-Za-z0-9_]+$/', $table_name)) {
+            return null;
+        }
+
+        if (!$this->table_exists($table_name)) {
+            return null;
+        }
+
+        return $table_name;
     }
 }

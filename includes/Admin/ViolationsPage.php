@@ -94,7 +94,7 @@ final class ViolationsListTable extends \WP_List_Table {
             $order = 'asc';
         }
 
-        $search_term = sanitize_text_field((string) ($_GET['s'] ?? ''));
+        $search_term = sanitize_text_field(wp_unslash((string) ($_GET['s'] ?? '')));
 
         $this->items = $this->repository->get_items($per_page, $current_page, $order, $search_term);
         $total_items = $this->repository->count_items($search_term);
