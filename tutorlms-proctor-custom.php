@@ -18,6 +18,13 @@ define('TLPC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TLPC_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 require_once TLPC_PLUGIN_DIR . 'includes/Plugin.php';
+require_once TLPC_PLUGIN_DIR . 'includes/Violations/Repository.php';
+
+function tlpc_activate_plugin(): void {
+    TLPC\Violations\Repository::maybe_upgrade_schema();
+}
+
+register_activation_hook(TLPC_PLUGIN_FILE, 'tlpc_activate_plugin');
 
 function tlpc_run_plugin(): void {
     $plugin = new TLPC\Plugin();

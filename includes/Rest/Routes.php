@@ -4,6 +4,7 @@ namespace TLPC\Rest;
 
 use TLPC\Settings;
 use TLPC\Tutor\AttemptService;
+use TLPC\Violations\Repository;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -116,6 +117,33 @@ final class Routes {
         }
 
         $result = $this->attempt_service->force_submit_quiz_with_zero_answers(get_current_user_id(), $quiz_id, $course_id, $reason);
+
+        if (!empty($result['ok'])) {
+            $user_id = get_current_user_id();
+            $user = get_userdata($user_id);
+            $first_name = '';
+            $last_name = '';
+            $email = '';
+
+            if ($user instanceof \WP_User) {
+                $first_name = (string) $user->first_name;
+                $last_name = (string) $user->last_name;
+                $email = (string) $user->user_email;
+            }
+
+            (new Repository())->insert_violation([
+                'user_id' => $user_id,
+                'attempt_id' => (int) ($result['attempt_id'] ?? 0),
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'email' => $email,
+                'quiz_id' => $quiz_id,
+                'course_id' => $course_id,
+                'quiz_title' => (string) get_the_title($quiz_id),
+                'reason' => (string) ($result['reason'] ?? $reason),
+                'occurred_at' => current_time('mysql'),
+            ]);
+        }
 
         $status = 200;
         if (empty($result['ok'])) {

@@ -19,10 +19,12 @@ final class Plugin {
     public function on_plugins_loaded(): void {
         // Settings (available on both admin and frontend)
         require_once TLPC_PLUGIN_DIR . 'includes/Settings.php';
+        require_once TLPC_PLUGIN_DIR . 'includes/Violations/Repository.php';
 
         // Admin settings UI
         if (is_admin()) {
             $this->init_admin_settings_page();
+            $this->init_admin_violations_page();
         }
 
         // REST API
@@ -52,6 +54,25 @@ final class Plugin {
         }
 
         (new $settings_page_class())->init();
+    }
+
+    private function init_admin_violations_page(): void {
+        $violations_page_file = TLPC_PLUGIN_DIR . 'includes/Admin/ViolationsPage.php';
+        $violations_page_class = 'TLPC\\Admin\\ViolationsPage';
+
+        if (!file_exists($violations_page_file)) {
+            $this->queue_admin_settings_notice(__('TutorLMS Proctor violations UI is unavailable because includes/Admin/ViolationsPage.php is missing.', 'tutorlms-proctor-custom'));
+            return;
+        }
+
+        require_once $violations_page_file;
+
+        if (!class_exists($violations_page_class, false)) {
+            $this->queue_admin_settings_notice(__('TutorLMS Proctor violations UI is unavailable because the ViolationsPage class could not be loaded.', 'tutorlms-proctor-custom'));
+            return;
+        }
+
+        (new $violations_page_class())->init();
     }
 
     private function queue_admin_settings_notice(string $message): void {

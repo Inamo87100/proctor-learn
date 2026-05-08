@@ -18,9 +18,19 @@ final class SettingsPage {
     }
 
     public function add_menu(): void {
-        add_options_page(
+        add_menu_page(
             __('TutorLMS Proctor', 'tutorlms-proctor-custom'),
             __('TutorLMS Proctor', 'tutorlms-proctor-custom'),
+            'manage_options',
+            'tlpc-settings',
+            [$this, 'render_page'],
+            'dashicons-shield-alt'
+        );
+
+        add_submenu_page(
+            'tlpc-settings',
+            __('Impostazioni', 'tutorlms-proctor-custom'),
+            __('Impostazioni', 'tutorlms-proctor-custom'),
             'manage_options',
             'tlpc-settings',
             [$this, 'render_page']
