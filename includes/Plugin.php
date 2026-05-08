@@ -55,6 +55,10 @@ final class Plugin {
     }
 
     private function queue_admin_settings_notice(string $message): void {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
         $this->admin_settings_notice = $message;
         add_action('admin_notices', [$this, 'render_admin_settings_notice']);
     }
