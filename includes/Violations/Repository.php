@@ -97,26 +97,31 @@ final class Repository {
         return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name()}");
     }
 
-    public function get_items(int $per_page, int $page_number, string $orderby = 'occurred_at', string $order = 'DESC'): array {
+    public function get_items(int $per_page, int $page_number, string $order = 'DESC'): array {
         global $wpdb;
 
         if (!$this->table_exists($this->table_name())) {
             return [];
         }
 
-        $allowed_orderby = [
-            'occurred_at' => 'occurred_at',
-        ];
-        $order_by_sql = $allowed_orderby[$orderby] ?? 'occurred_at';
         $order_sql = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
         $per_page = max(1, $per_page);
         $offset = max(0, ($page_number - 1) * $per_page);
 
-        $query = $wpdb->prepare(
-            "SELECT id, user_id, attempt_id, first_name, last_name, email, quiz_id, course_id, quiz_title, reason, occurred_at
+        $query_template = "SELECT id, user_id, attempt_id, first_name, last_name, email, quiz_id, course_id, quiz_title, reason, occurred_at
             FROM {$this->table_name()}
-            ORDER BY {$order_by_sql} {$order_sql}
-            LIMIT %d OFFSET %d",
+            ORDER BY occurred_at DESC
+            LIMIT %d OFFSET %d";
+
+        if ($order_sql === 'ASC') {
+            $query_template = "SELECT id, user_id, attempt_id, first_name, last_name, email, quiz_id, course_id, quiz_title, reason, occurred_at
+            FROM {$this->table_name()}
+            ORDER BY occurred_at ASC
+            LIMIT %d OFFSET %d";
+        }
+
+        $query = $wpdb->prepare(
+            $query_template,
             $per_page,
             $offset
         );

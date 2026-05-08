@@ -85,9 +85,12 @@ final class ViolationsListTable extends \WP_List_Table {
         $per_page = 20;
         $current_page = $this->get_pagenum();
         $order_by = sanitize_key((string) ($_GET['orderby'] ?? 'occurred_at'));
-        $order = sanitize_key((string) ($_GET['order'] ?? 'desc'));
+        $order = 'desc';
+        if ($order_by === 'occurred_at' && strtolower((string) ($_GET['order'] ?? 'desc')) === 'asc') {
+            $order = 'asc';
+        }
 
-        $this->items = $this->repository->get_items($per_page, $current_page, $order_by, $order);
+        $this->items = $this->repository->get_items($per_page, $current_page, $order);
 
         $this->set_pagination_args([
             'total_items' => $this->repository->count_items(),

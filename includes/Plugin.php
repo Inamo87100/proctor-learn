@@ -4,7 +4,6 @@ namespace TLPC;
 
 use TLPC\Rest\Routes;
 use TLPC\Tutor\Integration;
-use TLPC\Violations\Repository;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -21,8 +20,6 @@ final class Plugin {
         // Settings (available on both admin and frontend)
         require_once TLPC_PLUGIN_DIR . 'includes/Settings.php';
         require_once TLPC_PLUGIN_DIR . 'includes/Violations/Repository.php';
-
-        Repository::maybe_upgrade_schema();
 
         // Admin settings UI
         if (is_admin()) {
