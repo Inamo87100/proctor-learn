@@ -17,4 +17,4 @@ Plugin WordPress personalizzato per proctoring su **TutorLMS**.
 ## Installazione
 1. Copia la cartella del plugin in `wp-content/plugins/tutorlms-proctor-custom/` oppure zip e installa da WP.
 2. Attiva il plugin.
-3. Vai su **Impostazioni → TutorLMS Proctor** e configura corsi e soglie.
+3. Vai su **TutorLMS Proctor → Impostazioni** e configura corsi e soglie.
