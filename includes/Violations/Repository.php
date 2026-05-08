@@ -98,11 +98,10 @@ final class Repository {
         global $wpdb;
 
         $table_name = $this->table_name();
-        if (!$this->table_exists($table_name)) {
+        if ($table_name !== $wpdb->prefix . 'tlpc_violations' || !$this->table_exists($table_name)) {
             return 0;
         }
 
-        $table_name = esc_sql($table_name);
         $search_term = trim($search_term);
         if ($search_term === '') {
             return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
@@ -123,11 +122,10 @@ final class Repository {
         global $wpdb;
 
         $table_name = $this->table_name();
-        if (!$this->table_exists($table_name)) {
+        if ($table_name !== $wpdb->prefix . 'tlpc_violations' || !$this->table_exists($table_name)) {
             return [];
         }
 
-        $table_name = esc_sql($table_name);
         $order_sql = strtoupper($date_order) === 'ASC' ? 'ASC' : 'DESC';
         $per_page = max(1, $per_page);
         $offset = max(0, ($page_number - 1) * $per_page);
