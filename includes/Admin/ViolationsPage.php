@@ -147,9 +147,8 @@ final class ViolationsListTable extends \WP_List_Table {
         }
 
         $segments = explode(':', strtolower($raw_reason));
-        $is_tab_switch = ($segments[0] ?? '') === 'tab_switch'
-            || in_array('window_blur', $segments, true)
-            || in_array('visibilitychange_hidden', $segments, true);
+        $event_type = $segments[0] ?? '';
+        $is_tab_switch = in_array($event_type, ['tab_switch', 'window_blur', 'visibilitychange_hidden'], true);
 
         if (!$is_tab_switch) {
             return $raw_reason;

@@ -97,18 +97,20 @@ final class Repository {
     public function count_items(string $search_term = ''): int {
         global $wpdb;
 
-        if (!$this->table_exists($this->table_name())) {
+        $table_name = $this->table_name();
+        if (!$this->table_exists($table_name)) {
             return 0;
         }
 
+        $table_name = esc_sql($table_name);
         $search_term = trim($search_term);
         if ($search_term === '') {
-            return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name()}");
+            return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
         }
 
         $like = '%' . $wpdb->esc_like($search_term) . '%';
         $query = $wpdb->prepare(
-            "SELECT COUNT(*) FROM {$this->table_name()} WHERE email LIKE %s OR first_name LIKE %s OR last_name LIKE %s",
+            "SELECT COUNT(*) FROM {$table_name} WHERE (email LIKE %s OR first_name LIKE %s OR last_name LIKE %s)",
             $like,
             $like,
             $like
@@ -120,10 +122,12 @@ final class Repository {
     public function get_items(int $per_page, int $page_number, string $date_order = 'DESC', string $search_term = ''): array {
         global $wpdb;
 
-        if (!$this->table_exists($this->table_name())) {
+        $table_name = $this->table_name();
+        if (!$this->table_exists($table_name)) {
             return [];
         }
 
+        $table_name = esc_sql($table_name);
         $order_sql = strtoupper($date_order) === 'ASC' ? 'ASC' : 'DESC';
         $per_page = max(1, $per_page);
         $offset = max(0, ($page_number - 1) * $per_page);
@@ -134,25 +138,17 @@ final class Repository {
 
         if ($search_term !== '') {
             $like = '%' . $wpdb->esc_like($search_term) . '%';
-            $where_sql = ' WHERE email LIKE %s OR first_name LIKE %s OR last_name LIKE %s';
+            $where_sql = ' WHERE (email LIKE %s OR first_name LIKE %s OR last_name LIKE %s)';
             $query_args[] = $like;
             $query_args[] = $like;
             $query_args[] = $like;
         }
 
         $query_template = "SELECT id, user_id, attempt_id, first_name, last_name, email, quiz_id, course_id, quiz_title, reason, occurred_at
-            FROM {$this->table_name()}
+            FROM {$table_name}
             {$where_sql}
-            ORDER BY occurred_at DESC
+            ORDER BY occurred_at {$order_sql}
             LIMIT %d OFFSET %d";
-
-        if ($order_sql === 'ASC') {
-            $query_template = "SELECT id, user_id, attempt_id, first_name, last_name, email, quiz_id, course_id, quiz_title, reason, occurred_at
-            FROM {$this->table_name()}
-            {$where_sql}
-            ORDER BY occurred_at ASC
-            LIMIT %d OFFSET %d";
-        }
 
         $query_args[] = $per_page;
         $query_args[] = $offset;
