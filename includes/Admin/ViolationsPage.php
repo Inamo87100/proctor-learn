@@ -72,7 +72,6 @@ final class ViolationsListTable extends \WP_List_Table {
             'quiz' => __('Quiz', 'tutorlms-proctor-custom'),
             'course' => __('Corso', 'tutorlms-proctor-custom'),
             'reason' => __('Motivo', 'tutorlms-proctor-custom'),
-            'details' => __('Dettagli', 'tutorlms-proctor-custom'),
             'occurred_at' => __('Data e ora', 'tutorlms-proctor-custom'),
         ];
     }
@@ -131,8 +130,6 @@ final class ViolationsListTable extends \WP_List_Table {
                 return esc_html(trim($course_title) !== '' ? sprintf('%s (#%d)', $course_title, $course_id) : sprintf('Corso #%d', $course_id));
             case 'reason':
                 return esc_html($this->human_reason_label((string) ($item['reason'] ?? '')));
-            case 'details':
-                return esc_html((string) ($item['reason'] ?? ''));
             case 'occurred_at':
                 return esc_html((string) ($item['occurred_at'] ?? ''));
             default:
