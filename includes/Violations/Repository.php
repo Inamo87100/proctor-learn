@@ -67,24 +67,31 @@ final class Repository {
             return false;
         }
 
+        $row = [
+            'user_id' => absint($data['user_id'] ?? 0),
+            'attempt_id' => absint($data['attempt_id'] ?? 0),
+            'first_name' => sanitize_text_field((string) ($data['first_name'] ?? '')),
+            'last_name' => sanitize_text_field((string) ($data['last_name'] ?? '')),
+            'email' => sanitize_email((string) ($data['email'] ?? '')),
+            'quiz_id' => absint($data['quiz_id'] ?? 0),
+            'course_id' => absint($data['course_id'] ?? 0),
+            'quiz_title' => sanitize_text_field((string) ($data['quiz_title'] ?? '')),
+            'reason' => sanitize_text_field((string) ($data['reason'] ?? '')),
+            'occurred_at' => current_time('mysql'),
+        ];
+
         $inserted = $wpdb->insert(
             $this->table_name(),
-            [
-                'user_id' => absint($data['user_id'] ?? 0),
-                'attempt_id' => absint($data['attempt_id'] ?? 0),
-                'first_name' => sanitize_text_field((string) ($data['first_name'] ?? '')),
-                'last_name' => sanitize_text_field((string) ($data['last_name'] ?? '')),
-                'email' => sanitize_email((string) ($data['email'] ?? '')),
-                'quiz_id' => absint($data['quiz_id'] ?? 0),
-                'course_id' => absint($data['course_id'] ?? 0),
-                'quiz_title' => sanitize_text_field((string) ($data['quiz_title'] ?? '')),
-                'reason' => sanitize_text_field((string) ($data['reason'] ?? '')),
-                'occurred_at' => sanitize_text_field((string) ($data['occurred_at'] ?? current_time('mysql'))),
-            ],
+            $row,
             ['%d', '%d', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s']
         );
 
-        return $inserted !== false;
+        if ($inserted === false) {
+            do_action('tlpc_violation_insert_failed', $row, $wpdb->last_error);
+            return false;
+        }
+
+        return true;
     }
 
     public function count_items(): int {
