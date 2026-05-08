@@ -97,14 +97,14 @@ final class Repository {
         return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name()}");
     }
 
-    public function get_items(int $per_page, int $page_number, string $order = 'DESC'): array {
+    public function get_items(int $per_page, int $page_number, string $date_order = 'DESC'): array {
         global $wpdb;
 
         if (!$this->table_exists($this->table_name())) {
             return [];
         }
 
-        $order_sql = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
+        $order_sql = strtoupper($date_order) === 'ASC' ? 'ASC' : 'DESC';
         $per_page = max(1, $per_page);
         $offset = max(0, ($page_number - 1) * $per_page);
 
